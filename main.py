@@ -4,6 +4,7 @@ from tkinter.ttk import Combobox
 import os
 import json
 import datetime
+import threading
 
 import updater
 import BreakGrabber
@@ -13,6 +14,7 @@ OPNAME = ""
 CWD = os.path.realpath(os.path.dirname(__name__))
 DATA_FILENAMES = ["DATA","client_secrets"]
 DATA = {}
+TIMER_DATA = []
 DATA_FIELDS = [
     "тип позиции",
     "доход за час",
@@ -44,7 +46,11 @@ TAG_COLORS = {
     "<Button-5>":"cyan"
 }
 def UpdateData():
-    return updater.main(GOOGLE_SHEETS_KEY)
+    global DATA
+    DATA = updater.main(GOOGLE_SHEETS_KEY)
+def UpdateTimer():
+    global TIMER_DATA
+    TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
 def JSONLoad(filename,cwd=CWD):	
     path = "{}\{}.json".format(cwd,filename)
     with open(path, "r",encoding="UTF-8") as f:
@@ -70,12 +76,31 @@ except FileNotFoundError:
 GOOGLE_SHEETS_KEY = SECRETS["GOOGLE_SHEETS_KEY"]
 BREAK_SHEETS_KEY = SECRETS["BREAK_SHEETS_KEY"]
 
+THREADS = set()
+DataFlag = threading.Event()
+TimerDataFlag = threading.Event()
+DoneFlag = threading.Event()
+KillFlag = threading.Event()
+def UpdateThread(flag:threading.Event,func):
+    while True:
+        if(KillFlag.is_set()):break
+        if(flag.wait(2.0)):
+            func()
+            flag.clear()
+            DoneFlag.set()
+        
+DataThread = threading.Thread(target=UpdateThread,args=(DataFlag,UpdateData))
+THREADS.add(DataThread)
+TimerThread = threading.Thread(target=UpdateThread,args=(TimerDataFlag,UpdateTimer))
+THREADS.add(TimerThread)
+for thread in THREADS:
+    thread.start()
+
 try:DATA = JSONLoad(DATA_FILENAMES[0])
 except FileNotFoundError:
-    DATA = UpdateData()
-
-
-
+    DataFlag.set() # signal for data update
+    DoneFlag.wait() # wait for it to finish
+    DoneFlag.clear()
 
 ENCODE_DICTIONARY = DATA["DECODE"]
 MUTED = False # Flag for being muted
@@ -170,8 +195,7 @@ def InfoPaste():
     InfoCityEntry.delete(0,len(InfoCityEntry.get()))
     InfoCityEntry.insert(0,window.clipboard_get())
 def InfoUpdate():
-    global DATA
-    DATA = UpdateData()
+    DataFlag.set() # signal for data update
     GenericCleanUI(RightFrame)
     PageOperationRightUI()
 def InfoChangeColor(event=None,button=None,Color=None):
@@ -227,9 +251,7 @@ def PageTimersUI():
         Button(TimerSettingsFrame,text="Обновить",command=TimerUpdate).pack(side="top",anchor="w")
 
 def TimerUpdate():
-    global TIMER_DATA
-    try: TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
-    except KeyError: TIMER_DATA = []
+    TimerDataFlag.set() # signal for timer update
     GenericCleanUI(TimerSettingsFrame, soft=False)
     PageTimersUI()
     
@@ -241,14 +263,15 @@ def TimerAdd(index):
     TimerFrame.pack(side="top",anchor="w")
     Label(TimerFrame,text=f"Начало перерыва в {TIMER_DATA[index][0]}:{TIMER_DATA[index][1] if TIMER_DATA[index][1]>9 else f'0{TIMER_DATA[index][1]}'}.").pack(side="left",anchor="s")
 
-def Clocks(timers):
+def Clocks():
+    global TIMER_DATA
     time = datetime.datetime.now().time()
     string = time.strftime('%H:%M:%S')
     Clock.config(text=string)
-    if(string in timers):
-        Notify(["BREAK","For 15 minutes"]) #
-        Clock.after(900000,Notify,["BREAK END","Your break ended!"])
-    Clock.after(1000,Clocks,timers)
+    if(string in set([datetime.time(hours,minutes).isoformat("seconds") for hours, minutes in TIMER_DATA])):
+        Notify(["ПЕРЕРЫВ","На 15 минут"]) 
+        Clock.after(900000,Notify,["ПЕРЕРЫВ","Ваш перерыв закончился!"])
+    Clock.after(1000,Clocks)
 ClockFrame = Frame(UtilitiesFrame,relief="solid",bd=1)
 Clock = Label(ClockFrame,font=("Times New Roman",14,"bold"))
 ClockFrame.pack(side="left",anchor="s",fill="y")
@@ -338,9 +361,9 @@ def PageOperationRightUI():
     InfoUpdateButtonFrame.pack(side="left",anchor="n",fill="y")
     InfoUpdateButton.pack(side="left",anchor="n",padx=2,pady=2,fill="y")
 
-    InfoLabelFramesFrame.pack(side="left",anchor="n",fill="y")
+    InfoLabelFramesFrame.pack(side="left",anchor="n",fill="both",expand=1)
     for frame in InfoLabelFramesFrame.winfo_children():
-        frame.pack(side="left",anchor="n",fill="y")
+        frame.pack(side="left",anchor="n",fill="both",expand=1)
         frame.winfo_children()[0].pack(side="top",anchor="n",fill="both",expand=1)
         frame.winfo_children()[1].pack(side="top",anchor="n",fill="both",expand=1)
     #InfoLabelFillFrame.pack(side="left",anchor="n",fill="both",expand=1)
@@ -375,10 +398,7 @@ def OperationUI():
     OPNAME = NameEntry.get()
     DATA["USER"] = [OPNAME]
     JSONSave(DATA_FILENAMES[0],data=DATA)
-    global TIMER_DATA
-    try:TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
-    except KeyError:TIMER_DATA = []
-    Clocks(set([datetime.time(hours,minutes).isoformat("seconds") for hours, minutes in TIMER_DATA]))
+    TimerDataFlag.set() # signal for timer update
     PageCleanUI()
     PageOperationRBUI()
 OperationButton = Button(TopFrame,text="Начать",command=OperationUI)
@@ -403,13 +423,24 @@ ModeFrame = Frame(UtilitiesFrame,relief="solid",bd=1)
 ModeButton = Button(ModeFrame,command=ChangeModeUI,textvariable=ModeStringVar)
 ModeFrame.pack(side="right",anchor="s")
 ModeButton.pack(side="right",anchor="s",padx=2,pady=2)
+Clocks()
 try: 
     OPNAME = DATA["USER"][0]
-    global TIMER_DATA
-    try:TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
-    except KeyError:TIMER_DATA = []
-    Clocks(set([datetime.time(hours,minutes).isoformat("seconds") for hours, minutes in TIMER_DATA]))
+    TimerDataFlag.set() # signal for timer update
     PageOperationRBUI()
 except KeyError: PageSetupUI()
+
+def Exit():
+    KillFlag.set()
+    for thread in THREADS:
+        thread.join()
 try:window.mainloop()
-except KeyboardInterrupt:quit()
+except KeyboardInterrupt: 
+    Exit()
+    quit()
+except Exception as E:
+    Exit()
+    raise E
+finally:
+    Exit()
+    quit()

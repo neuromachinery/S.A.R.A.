@@ -21,7 +21,7 @@ def main(key,name:str):
     worksheet = find_worksheet(sh)
     if(not worksheet): 
         print("Worksheet have not been found")
-        raise KeyError
+        return []
     #pattern = name
     #pattern = re.compile("^(?=.*{0})(?=.*{1})(?=.*{2})".format(*name.split()))
     pattern = re.compile(f"^{''.join([f'(?=.*{word})' for word in name.split()])}")
@@ -29,7 +29,7 @@ def main(key,name:str):
         data = worksheet.row_values(worksheet.find(pattern,in_column=1).row)
     except AttributeError:
         print("Breaks have not been found")
-        raise KeyError
+        return []
     OFFSET = 4 # offset from 00:00
 
     breakIndexes = [i-2 for i, x in enumerate(data) if x == "0"]
