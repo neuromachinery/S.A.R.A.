@@ -4,6 +4,7 @@ from tkinter.ttk import Combobox
 import os
 import json
 import datetime
+import threading
 
 import updater
 import BreakGrabber
@@ -44,7 +45,12 @@ TAG_COLORS = {
     "<Button-5>":"cyan"
 }
 def UpdateData():
-    return updater.main(GOOGLE_SHEETS_KEY)
+    global DATA
+    DATA = updater.main(GOOGLE_SHEETS_KEY)
+def UpdateTimer():
+    global TIMER_DATA
+    try: TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
+    except KeyError: TIMER_DATA = []
 def JSONLoad(filename,cwd=CWD):	
     path = "{}\{}.json".format(cwd,filename)
     with open(path, "r",encoding="UTF-8") as f:
@@ -72,7 +78,7 @@ BREAK_SHEETS_KEY = SECRETS["BREAK_SHEETS_KEY"]
 
 try:DATA = JSONLoad(DATA_FILENAMES[0])
 except FileNotFoundError:
-    DATA = UpdateData()
+    UpdateData()
 
 
 
@@ -170,8 +176,7 @@ def InfoPaste():
     InfoCityEntry.delete(0,len(InfoCityEntry.get()))
     InfoCityEntry.insert(0,window.clipboard_get())
 def InfoUpdate():
-    global DATA
-    DATA = UpdateData()
+    UpdateData()
     GenericCleanUI(RightFrame)
     PageOperationRightUI()
 def InfoChangeColor(event=None,button=None,Color=None):
@@ -227,9 +232,7 @@ def PageTimersUI():
         Button(TimerSettingsFrame,text="Обновить",command=TimerUpdate).pack(side="top",anchor="w")
 
 def TimerUpdate():
-    global TIMER_DATA
-    try: TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
-    except KeyError: TIMER_DATA = []
+    UpdateTimer()
     GenericCleanUI(TimerSettingsFrame, soft=False)
     PageTimersUI()
     
@@ -375,9 +378,7 @@ def OperationUI():
     OPNAME = NameEntry.get()
     DATA["USER"] = [OPNAME]
     JSONSave(DATA_FILENAMES[0],data=DATA)
-    global TIMER_DATA
-    try:TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
-    except KeyError:TIMER_DATA = []
+    UpdateTimer()
     Clocks(set([datetime.time(hours,minutes).isoformat("seconds") for hours, minutes in TIMER_DATA]))
     PageCleanUI()
     PageOperationRBUI()
@@ -405,9 +406,7 @@ ModeFrame.pack(side="right",anchor="s")
 ModeButton.pack(side="right",anchor="s",padx=2,pady=2)
 try: 
     OPNAME = DATA["USER"][0]
-    global TIMER_DATA
-    try:TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
-    except KeyError:TIMER_DATA = []
+    UpdateTimer()
     Clocks(set([datetime.time(hours,minutes).isoformat("seconds") for hours, minutes in TIMER_DATA]))
     PageOperationRBUI()
 except KeyError: PageSetupUI()
