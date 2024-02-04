@@ -1,5 +1,5 @@
 from windows_toasts import Toast, WindowsToaster
-from tkinter import Tk, Entry, Label, Button, StringVar, Frame, Radiobutton
+from tkinter import Tk, Entry, Label, Button, StringVar, Frame#, Radiobutton
 from tkinter.ttk import Combobox
 import os
 import json
@@ -85,8 +85,8 @@ HIGHLIGHTED_FRAME = None
 MODE = False
 window = Tk()
 window.title("S.A.R.A User Interface")
-#window.geometry("970x480")
-window.geometry("1024x600")
+window.geometry("560x170")
+#window.geometry("1024x600")
 MainFrame = Frame(window)
 MainFrame.pack(fill="both",expand=1,padx=3,pady=3)
 TopFrame = Frame(MainFrame,relief="solid",borderwidth=2)
@@ -103,9 +103,10 @@ ButtonsFrame = Frame(LeftFrame)
 
 RightFrame = Frame(TopFrame,relief="solid",borderwidth=1)
 InfoFrame = Frame(RightFrame,relief="solid",borderwidth=1)
+InfoTopFrame = Frame(InfoFrame,relief="solid",borderwidth=1)
+InfoBottomFrame = Frame(InfoFrame,relief="solid",borderwidth=1)
 
-
-InfoLabelFramesFrame = Frame(InfoFrame)
+InfoLabelFramesFrame = Frame(InfoBottomFrame)
 InfoVars = []
 for field in DATA_FIELDS:
     InfoVar = StringVar(value="пусто")
@@ -113,11 +114,11 @@ for field in DATA_FIELDS:
     InfoLabelFrame = Frame(InfoLabelFramesFrame)
     InfoLabel = Label(InfoLabelFrame,text=field,relief="solid",borderwidth=1)
     InfoVarLabel = Label(InfoLabelFrame,textvariable=InfoVar,relief="solid",borderwidth=1)
-InfoLabelFillFrame = Frame(InfoFrame,relief="solid",borderwidth=1)
-InfoCityFrame = Frame(InfoFrame,relief="solid",borderwidth=1)
+#InfoLabelFillFrame = Frame(InfoFrame,relief="solid",borderwidth=1)
+InfoCityFrame = Frame(InfoTopFrame,relief="solid",borderwidth=1)
 InfoCityLabel = Label(InfoCityFrame,text="Введите город",relief="solid",borderwidth=1)
 InfoCityEntry = Entry(InfoCityFrame)
-InfoJobFrame = Frame(InfoFrame,relief="solid",borderwidth=1)
+InfoJobFrame = Frame(InfoTopFrame,relief="solid",borderwidth=1)
 InfoJobLabel = Label(InfoJobFrame,text="Выберите позицию",relief="solid",borderwidth=1)
 InfoJobCombo = Combobox(InfoJobFrame,values=list(ENCODE_DICTIONARY["JOBS"].keys()))
 InfoJobCombo["state"] = "readonly"
@@ -149,16 +150,19 @@ def InfoGet():
             var.set("Нет города")
         return
     Job = InfoJobCombo.get()
-    info = DATA[City][ENCODE_DICTIONARY["JOBS"][Job]]
-
-    #if("#N/A" in info):info[info.index("#N/A")]="Нет"
-    if(len(info[-1])<len(ENCODE_DICTIONARY["PROMO"])):
-        key = "0" if list(info[-1].keys())[0]=="1" else "1"
-        info[-1][key] = "Нет"
-    displayInfo = info.copy()
-    displayInfo.append(displayInfo[4]["1"])
-    displayInfo[4] = displayInfo[4]["0"]
-    displayInfo[0] = list(ENCODE_DICTIONARY["TYPE"].keys())[int(displayInfo[0])]
+    try:
+        info = DATA[City][ENCODE_DICTIONARY["JOBS"][Job]]
+    except KeyError:
+        return
+    else:
+        #if("#N/A" in info):info[info.index("#N/A")]="Нет"
+        if(len(info[-1])<len(ENCODE_DICTIONARY["PROMO"])):
+            key = "0" if list(info[-1].keys())[0]=="1" else "1"
+            info[-1][key] = "Нет"
+        displayInfo = info.copy()
+        displayInfo.append(displayInfo[4]["1"])
+        displayInfo[4] = displayInfo[4]["0"]
+        displayInfo[0] = list(ENCODE_DICTIONARY["TYPE"].keys())[int(displayInfo[0])]
     
     for i in range(len(displayInfo)):
         InfoVars[i].set(displayInfo[i])
@@ -172,14 +176,14 @@ def InfoUpdate():
     PageOperationRightUI()
 def InfoChangeColor(event=None,button=None,Color=None):
     button.configure(bg=Color)
-InfoGetButtonFrame = Frame(InfoFrame,relief="solid",borderwidth=1)
-InfoGetButton = Button(InfoGetButtonFrame,text="Обновить",command=InfoGet)
+InfoGetButtonFrame = Frame(InfoTopFrame,relief="solid",borderwidth=1)
+InfoGetButton = Button(InfoGetButtonFrame,text="Обновить значения",command=InfoGet)
 InfoButtonsFrame = Frame(RightFrame,relief="solid",borderwidth=1)
 InfoClearPasteButonsFrame = Frame(InfoButtonsFrame,relief="solid",borderwidth=1)
 InfoPasteButton = Button(InfoClearPasteButonsFrame,text="Вставить",command=InfoPaste)
 InfoClearButton = Button(InfoClearPasteButonsFrame,text="Очистить",command=lambda:InfoCityEntry.delete(0,len(InfoCityEntry.get())))
 InfoFillFrame = Frame(InfoButtonsFrame,relief="solid",borderwidth=1)
-InfoUpdateButtonFrame = Frame(InfoButtonsFrame,relief="solid",borderwidth=1)
+InfoUpdateButtonFrame = Frame(InfoTopFrame,relief="solid",borderwidth=1)
 InfoUpdateButton = Button(InfoUpdateButtonFrame,text="Обновить базу данных",command=InfoUpdate)
 InfoTagButtonsFrame = Frame(InfoButtonsFrame,relief="solid",borderwidth=1)
 for question in QUESTIONS:
@@ -259,7 +263,7 @@ GroupLabel = Label(TopFrame, text="Группа оператора")
 GroupCombobox = Combobox(TopFrame,width=15)
 GroupCombobox["values"] = ["группа-1","группа-2"]
 GroupCombobox['state'] = 'readonly'
-
+""" # reserved for telegram integration
 def StatusClearUI():
     for widget in StatusFrame.winfo_children():
         widget.pack_forget()
@@ -296,6 +300,7 @@ StatusBreakCombo["values"] = [5,10,15,20,30,40,"другое"]
 StatusBreakCombo["state"] = 'readonly'
 StatusBreakCombo.bind('<<ComboboxSelected>>', StatusBreakComboCallback)
 StatusBreakEntry = Entry(StatusBreakFrame)
+"""
 
 
 
@@ -309,7 +314,19 @@ def PageSetupUI():
     GroupCombobox.pack(side="top",anchor="w",padx=2,pady=2)
     OperationButton.pack(side="top",anchor="w",padx=2,pady=2)
 def PageOperationRightUI():
+    InfoButtonsFrame.pack(side="top",fill="x")
+    InfoClearPasteButonsFrame.pack(side="left",anchor="n",fill="y")
+    InfoPasteButton.pack(side="left",anchor="n",padx=2,pady=2)
+    InfoClearButton.pack(side="left",anchor="n",padx=2,pady=2)
+    InfoTagButtonsFrame.pack(side="left",anchor="n",fill="y")
+    for button in InfoTagButtonsFrame.winfo_children():
+        button.pack(side="left",anchor="n",padx=2,pady=2,fill="y")
+    InfoFillFrame.pack(side="left",anchor="n",fill="both",expand=1)
+    FillFrame.pack(side="top",anchor="w",fill="both",expand=1)
+    
     InfoFrame.pack(side="top",anchor="w",fill="both")
+    InfoTopFrame.pack(side="top",anchor="w",fill="both")
+    InfoBottomFrame.pack(side="top",anchor="w",fill="both")
     InfoCityFrame.pack(side="left",anchor="s",fill="y")
     InfoCityLabel.pack(side="top",anchor="s",fill="both",ipadx=1)
     InfoCityEntry.pack(side="top",anchor="s",ipadx=1)
@@ -318,31 +335,19 @@ def PageOperationRightUI():
     InfoJobCombo.pack(side="top",anchor="s",fill="both",ipadx=1)
     InfoGetButtonFrame.pack(side="left",anchor="s",fill="y")
     InfoGetButton.pack(side="left",anchor="s",padx=2,pady=2,fill="y")
+    InfoUpdateButtonFrame.pack(side="left",anchor="n",fill="y")
+    InfoUpdateButton.pack(side="left",anchor="n",padx=2,pady=2,fill="y")
 
     InfoLabelFramesFrame.pack(side="left",anchor="n",fill="y")
     for frame in InfoLabelFramesFrame.winfo_children():
         frame.pack(side="left",anchor="n",fill="y")
         frame.winfo_children()[0].pack(side="top",anchor="n",fill="both",expand=1)
         frame.winfo_children()[1].pack(side="top",anchor="n",fill="both",expand=1)
-    InfoLabelFillFrame.pack(side="left",anchor="n",fill="both",expand=1)
-    InfoButtonsFrame.pack(side="top",fill="x")
-    InfoClearPasteButonsFrame.pack(side="left",anchor="n",fill="y")
-    InfoPasteButton.pack(side="left",anchor="n",padx=2,pady=2)
-    InfoClearButton.pack(side="left",anchor="n",padx=2,pady=2)
-    InfoUpdateButtonFrame.pack(side="right",anchor="n",fill="y")
-    InfoUpdateButton.pack(side="right",anchor="n",padx=2,pady=2)
-    InfoTagButtonsFrame.pack(side="left",anchor="n",fill="y")
-    for button in InfoTagButtonsFrame.winfo_children():
-        button.pack(side="left",anchor="n",padx=2,pady=2,fill="y")
-    InfoFillFrame.pack(side="left",anchor="n",fill="both",expand=1)
-    FillFrame.pack(side="top",anchor="w",fill="both",expand=1)
+    #InfoLabelFillFrame.pack(side="left",anchor="n",fill="both",expand=1)
 def PageOperationRBUI():
-    global TIMER_DATA
-    try:TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
-    except KeyError:TIMER_DATA = []
-    Clocks(set([datetime.time(hours,minutes).isoformat("seconds") for hours, minutes in TIMER_DATA]))
     LeftFrame.pack(side="left",anchor="n",fill="both")
     RightFrame.pack(side="left",anchor="n",fill="both",expand=1)
+    """ # reserved for later telegram integration
     RButtonsFrame.pack(side="top",fill="x")
     ButtonsFrame.pack(side="top",fill="both",expand=1)
     for RButton in Statuses:
@@ -352,8 +357,9 @@ def PageOperationRBUI():
     StatusSend.pack(side="top",anchor="w",padx=2,pady=2)
     StatusFrame.pack(side="top",anchor="w",fill="both",expand=1)
     RBLabel.pack(side="top",anchor="w")
+    """
     PageOperationRightUI()
-
+""" # reserved for later telegram integration
 def PageOperationDescriptionUI():
     StatusDescriptionFrame.pack(side="left",anchor="n",fill="both",expand=1)
     StatusDescriptionLabel.pack(side="top",anchor="w",padx=2,pady=2)
@@ -362,13 +368,17 @@ def PageOperationBreakUI():
     StatusBreakLabel.pack(side="top",anchor="w",padx=2,pady=2)
     StatusBreakFrame.pack(side="top",anchor="w",padx=2,pady=2,fill="both",expand=1)
     StatusBreakCombo.pack(side="top",anchor="w",padx=2,pady=2)
+"""
 def OperationUI():
     global OPNAME
     global DATA
     OPNAME = NameEntry.get()
     DATA["USER"] = [OPNAME]
-    print(len(DATA))
     JSONSave(DATA_FILENAMES[0],data=DATA)
+    global TIMER_DATA
+    try:TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
+    except KeyError:TIMER_DATA = []
+    Clocks(set([datetime.time(hours,minutes).isoformat("seconds") for hours, minutes in TIMER_DATA]))
     PageCleanUI()
     PageOperationRBUI()
 OperationButton = Button(TopFrame,text="Начать",command=OperationUI)
@@ -395,6 +405,10 @@ ModeFrame.pack(side="right",anchor="s")
 ModeButton.pack(side="right",anchor="s",padx=2,pady=2)
 try: 
     OPNAME = DATA["USER"][0]
+    global TIMER_DATA
+    try:TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
+    except KeyError:TIMER_DATA = []
+    Clocks(set([datetime.time(hours,minutes).isoformat("seconds") for hours, minutes in TIMER_DATA]))
     PageOperationRBUI()
 except KeyError: PageSetupUI()
 try:window.mainloop()
