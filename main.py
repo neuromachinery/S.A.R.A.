@@ -4,6 +4,7 @@ from tkinter.ttk import Combobox
 import os
 import json
 import datetime
+import asyncio
 
 import updater
 import BreakGrabber
@@ -43,18 +44,55 @@ TAG_COLORS = {
     "<Button-4>":"lightgrey",
     "<Button-5>":"cyan"
 }
-def UpdateData():
-    return updater.main(GOOGLE_SHEETS_KEY)
+
+BG_TASKS = set()
+LOOP = asyncio.get_event_loop()
+
+async def mainloop(window,interval=1/120):
+    while True:
+        window.update()
+        if(len(BG_TASKS)==0):
+            await asyncio.sleep(interval)
+            return
+        for task in BG_TASKS:
+            await task
+        
+def Start():
+    global LOOP
+    BG_TASKS.add(LOOP.create_task(mainloop(window)))
+    LOOP.run_forever()
+    LOOP.close()
+
+def UpdateData(loop=LOOP):
+    async def Update():
+        global DATA
+        DATA = updater.main(GOOGLE_SHEETS_KEY)
+    task = loop.create_task(Update())
+    BG_TASKS.add(task)
+    task.add_done_callback(BG_TASKS.discard)
+def UpdateTimer(loop=LOOP):
+    async def Update():
+        global TIMER_DATA
+        try:TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
+        except KeyError:TIMER_DATA = []
+    task = loop.create_task(Update())
+    BG_TASKS.add(task)
+    task.add_done_callback(BG_TASKS.discard)
+async def ClockStart():
+    await UpdateTimer()
+    Clocks(set([datetime.time(hours,minutes).isoformat("seconds") for hours, minutes in TIMER_DATA]))
+
 def JSONLoad(filename,cwd=CWD):	
     path = "{}\{}.json".format(cwd,filename)
     with open(path, "r",encoding="UTF-8") as f:
         data = json.load(f)
-    return data
-    
+    return data 
 def JSONSave(filename,cwd=CWD,data=DATA):
     path = "{}\{}.json".format(cwd,filename)
     with open(path, "w", encoding="UTF-8") as f: 
         json.dump(data,f,ensure_ascii=False)
+
+
 try:SECRETS = JSONLoad(DATA_FILENAMES[1])
 except FileNotFoundError:
     client_secrets = {"installed":{},"GOOGLE_SHEETS_KEY":"","BREAK_SHEETS_KEY":""}
@@ -72,7 +110,7 @@ BREAK_SHEETS_KEY = SECRETS["BREAK_SHEETS_KEY"]
 
 try:DATA = JSONLoad(DATA_FILENAMES[0])
 except FileNotFoundError:
-    DATA = UpdateData()
+    UpdateData()
 
 
 
@@ -83,6 +121,7 @@ TOASTER = WindowsToaster('S.A.R.A User Interface')
 HIGHLIGHTED_FRAME = None
 
 MODE = False
+
 window = Tk()
 window.title("S.A.R.A User Interface")
 window.geometry("560x170")
@@ -170,8 +209,7 @@ def InfoPaste():
     InfoCityEntry.delete(0,len(InfoCityEntry.get()))
     InfoCityEntry.insert(0,window.clipboard_get())
 def InfoUpdate():
-    global DATA
-    DATA = UpdateData()
+    UpdateData()
     GenericCleanUI(RightFrame)
     PageOperationRightUI()
 def InfoChangeColor(event=None,button=None,Color=None):
@@ -227,9 +265,7 @@ def PageTimersUI():
         Button(TimerSettingsFrame,text="Обновить",command=TimerUpdate).pack(side="top",anchor="w")
 
 def TimerUpdate():
-    global TIMER_DATA
-    try: TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
-    except KeyError: TIMER_DATA = []
+    UpdateTimer()
     GenericCleanUI(TimerSettingsFrame, soft=False)
     PageTimersUI()
     
@@ -405,11 +441,9 @@ ModeFrame.pack(side="right",anchor="s")
 ModeButton.pack(side="right",anchor="s",padx=2,pady=2)
 try: 
     OPNAME = DATA["USER"][0]
-    global TIMER_DATA
-    try:TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
-    except KeyError:TIMER_DATA = []
-    Clocks(set([datetime.time(hours,minutes).isoformat("seconds") for hours, minutes in TIMER_DATA]))
+    UpdateTimer()    
+    asyncio.run(ClockStart())
     PageOperationRBUI()
 except KeyError: PageSetupUI()
-try:window.mainloop()
+try:Start()
 except KeyboardInterrupt:quit()
