@@ -31,7 +31,7 @@ def main(key,name:str):
     try:
         data = worksheet.row_values(worksheet.find(pattern,in_column=1).row)
     except AttributeError:
-        print("Нет перерывов")
+        print(f"Нет перерывов для {name}")
         return []
     OFFSET = 4 # offset from 00:00
 
