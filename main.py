@@ -133,10 +133,10 @@ LeftFrame = Frame(TopFrame)
 RButtonsFrame = Frame(LeftFrame,relief="solid",borderwidth=2)
 ButtonsFrame = Frame(LeftFrame)
 
-RightFrame = Frame(TopFrame,relief="solid",borderwidth=1)
-InfoFrame = Frame(RightFrame,relief="solid",borderwidth=1)
+RightFrame = Frame(TopFrame)
+InfoFrame = Frame(RightFrame)
 InfoTopFrame = Frame(InfoFrame,relief="solid",borderwidth=1)
-InfoBottomFrame = Frame(InfoFrame,relief="solid",borderwidth=1)
+InfoBottomFrame = Frame(InfoFrame)
 
 InfoLabelFramesFrame = Frame(InfoBottomFrame)
 InfoVars = []
@@ -222,7 +222,7 @@ InfoButtonsFrame = Frame(RightFrame,relief="solid",borderwidth=1)
 InfoClearPasteButonsFrame = Frame(InfoButtonsFrame,relief="solid",borderwidth=1)
 InfoPasteButton = Button(InfoClearPasteButonsFrame,text="Вставить",command=InfoPaste)
 InfoClearButton = Button(InfoClearPasteButonsFrame,text="Очистить",command=lambda:InfoCityEntry.delete(0,len(InfoCityEntry.get())))
-InfoFillFrame = Frame(InfoButtonsFrame,relief="solid",borderwidth=1)
+#InfoFillFrame = Frame(InfoButtonsFrame,relief="solid",borderwidth=1)
 InfoUpdateButtonFrame = Frame(InfoTopFrame,relief="solid",borderwidth=1)
 InfoUpdateButton = Button(InfoUpdateButtonFrame,text="Обновить базу данных",command=InfoUpdate)
 InfoTagButtonsFrame = Frame(InfoButtonsFrame,relief="solid",borderwidth=1)
@@ -232,7 +232,7 @@ for question in QUESTIONS:
         InfoTagButton.bind(key, lambda event,button=InfoTagButton,color=color:InfoChangeColor(event,button=button,Color=color))
     
 
-FillFrame = Frame(RightFrame,relief="solid",borderwidth=1)
+#FillFrame = Frame(RightFrame)
 
 StatusFrame = Frame(ButtonsFrame,relief="solid",borderwidth=2)
 
@@ -360,29 +360,51 @@ def PageSetupUI():
     #GroupCombobox.pack(side="top",anchor="w",padx=2,pady=2)
     OperationButton.pack(side="top",anchor="w",padx=2,pady=2)
 def PageOperationRightUI():
-    InfoButtonsFrame.pack(side="top",fill="x")
+    InfoButtonsFrame.pack(side="top",anchor="w",fill="both",expand=1)
+
+
     InfoClearPasteButonsFrame.pack(side="left",anchor="n",fill="y")
-    InfoPasteButton.pack(side="left",anchor="n",padx=2,pady=2)
-    InfoClearButton.pack(side="left",anchor="n",padx=2,pady=2)
-    InfoTagButtonsFrame.pack(side="left",anchor="n",fill="y")
+
+    InfoPasteButton.pack(side="left",anchor="n",padx=2,pady=2,fill="both",expand=1)
+    InfoClearButton.pack(side="left",anchor="n",padx=2,pady=2,fill="both",expand=1)
+
+    InfoTagButtonsFrame.pack(side="left",anchor="n",fill="both",expand=1)
+
     for button in InfoTagButtonsFrame.winfo_children():
-        button.pack(side="left",anchor="n",padx=2,pady=2,fill="y")
-    InfoFillFrame.pack(side="left",anchor="n",fill="both",expand=1)
-    FillFrame.pack(side="top",anchor="w",fill="both",expand=1)
+        button.pack(side="left",anchor="n",padx=2,pady=2,fill="both",expand=1)
+
+    #InfoFillFrame.pack(side="left",anchor="n",fill="both",expand=1)
+
+
+
+    #FillFrame.pack(side="top",anchor="w",fill="both",expand=1)
+
+
+
+    InfoFrame.pack(side="top",anchor="w",fill="both",expand=1)
+
+
+    InfoTopFrame.pack(side="top",anchor="w",fill="both",expand=1)   
+
+
+    InfoCityFrame.pack(side="left",anchor="s",fill="both",expand=1)
+
+    InfoCityLabel.pack(side="top",anchor="s",fill="both",expand=1,ipadx=1)
+    InfoCityEntry.pack(side="top",anchor="s",fill="both",expand=1,ipadx=1)
+
+    InfoBottomFrame.pack(side="top",anchor="w",fill="both",expand=1)
+
+
+    InfoJobFrame.pack(side="left",anchor="s",fill="both",expand=1)
+
+    InfoJobLabel.pack(side="top",anchor="s",fill="both",expand=1,ipadx=1)
+    InfoJobCombo.pack(side="top",anchor="s",fill="both",expand=1,ipadx=1)
+
+    InfoGetButtonFrame.pack(side="left",anchor="s",fill="both",expand=1)
     
-    InfoFrame.pack(side="top",anchor="w",fill="both")
-    InfoTopFrame.pack(side="top",anchor="w",fill="both")
-    InfoBottomFrame.pack(side="top",anchor="w",fill="both")
-    InfoCityFrame.pack(side="left",anchor="s",fill="y")
-    InfoCityLabel.pack(side="top",anchor="s",fill="both",ipadx=1)
-    InfoCityEntry.pack(side="top",anchor="s",ipadx=1)
-    InfoJobFrame.pack(side="left",anchor="s",fill="y")
-    InfoJobLabel.pack(side="top",anchor="s",fill="both",ipadx=1)
-    InfoJobCombo.pack(side="top",anchor="s",fill="both",ipadx=1)
-    InfoGetButtonFrame.pack(side="left",anchor="s",fill="y")
-    InfoGetButton.pack(side="left",anchor="s",padx=2,pady=2,fill="y")
-    InfoUpdateButtonFrame.pack(side="left",anchor="n",fill="y")
-    InfoUpdateButton.pack(side="left",anchor="n",padx=2,pady=2,fill="y")
+    InfoGetButton.pack(side="left",anchor="s",padx=2,pady=2,fill="both",expand=1)
+    InfoUpdateButtonFrame.pack(side="left",anchor="n",fill="both",expand=1)
+    InfoUpdateButton.pack(side="left",anchor="n",padx=2,pady=2,fill="both",expand=1)
 
     InfoLabelFramesFrame.pack(side="left",anchor="n",fill="both",expand=1)
     for frame in InfoLabelFramesFrame.winfo_children():
