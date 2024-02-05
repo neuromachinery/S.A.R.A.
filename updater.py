@@ -1,19 +1,20 @@
 import gspread
-import os
+from os import path
+from sys import argv
 import json
 def append_and_index(value:str,dictionary:dict,value_type):
     index = str(len(dictionary[value_type]))
     dictionary[value_type][value]=index
     return index
 def main(key,filename="DATA"):
-    try:gc = gspread.service_account()
+    CWD = path.dirname(argv[0])
+    try:gc = gspread.service_account(filename=path.join(CWD,"service_account.json"))
     except FileNotFoundError:
-        print("No service account.")
+        print("Нет сервисного аккаунта. Спросите разраба :)")
         input()
         quit()
     sh = gc.open_by_key(key)
 
-    CWD = os.path.realpath(os.path.dirname(__name__))
     GROUPS = ["CITIES","TYPE","JOBS","PROMO"]
     DATA = {}
     ENCODING_DICTIONARY = {}

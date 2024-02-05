@@ -1,4 +1,6 @@
 import gspread
+from os import path
+from sys import argv
 import re
 from datetime import datetime
 DATE = datetime.now().strftime("%d.%m")
@@ -12,15 +14,16 @@ def find_worksheet(sh):
             return worksheet
     return 0
 def main(key,name:str):
-    try:gc = gspread.service_account()
+    CWD = path.dirname(argv[0])
+    try:gc = gspread.service_account(filename=path.join(CWD,"service_account.json"))
     except FileNotFoundError:
-        print("No service account.")
+        print("Нет сервисного аккаунта. Спросите разраба :)")
         input()
         quit()
     sh = gc.open_by_key(key)
     worksheet = find_worksheet(sh)
     if(not worksheet): 
-        print("Worksheet have not been found")
+        print("Рабочий лист не найден")
         return []
     #pattern = name
     #pattern = re.compile("^(?=.*{0})(?=.*{1})(?=.*{2})".format(*name.split()))
@@ -28,7 +31,7 @@ def main(key,name:str):
     try:
         data = worksheet.row_values(worksheet.find(pattern,in_column=1).row)
     except AttributeError:
-        print("Breaks have not been found")
+        print("Нет перерывов")
         return []
     OFFSET = 4 # offset from 00:00
 
