@@ -2,6 +2,7 @@ from windows_toasts import Toast, WindowsToaster
 from tkinter import Tk, Entry, Label, Button, StringVar, Frame#, Radiobutton
 from tkinter.ttk import Combobox
 import os
+from sys import argv
 import json
 import datetime
 import threading
@@ -11,7 +12,8 @@ import BreakGrabber
 
 DATE = datetime.datetime.now().strftime("%d.%m")
 OPNAME = ""
-CWD = os.path.realpath(os.path.dirname(__name__))
+#CWD = os.path.realpath(os.path.dirname(__name__))
+CWD = os.path.dirname(argv[0])
 DATA_FILENAMES = ["DATA","client_secrets"]
 DATA = {}
 TIMER_DATA = []
@@ -51,28 +53,21 @@ def UpdateData():
 def UpdateTimer():
     global TIMER_DATA
     TIMER_DATA = BreakGrabber.main(BREAK_SHEETS_KEY,OPNAME)
-def JSONLoad(filename,cwd=CWD):	
-    path = "{}\{}.json".format(cwd,filename)
+def JSONLoad(filename,cwd=CWD):
+    path = os.path.abspath(os.path.join(cwd,filename+".json"))
     with open(path, "r",encoding="UTF-8") as f:
         data = json.load(f)
     return data
     
 def JSONSave(filename,cwd=CWD,data=DATA):
-    path = "{}\{}.json".format(cwd,filename)
+    path = os.path.abspath(os.path.join(cwd,filename+".json"))
     with open(path, "w", encoding="UTF-8") as f: 
         json.dump(data,f,ensure_ascii=False)
 try:SECRETS = JSONLoad(DATA_FILENAMES[1])
 except FileNotFoundError:
-    client_secrets = {"installed":{},"GOOGLE_SHEETS_KEY":"","BREAK_SHEETS_KEY":""}
-    for thing in ["GOOGLE_SHEETS_KEY","BREAK_SHEETS_KEY"]:
-        print(f"Enter {thing}: ",end="")
-        client_secrets[thing] = input()
-    for thing in ["client_id","project_id","auth_uri","token_uri","auth_provider_x509_cert_url","client_secret"]:
-        print(f"Enter {thing}: ",end="")
-        client_secrets["installed"][thing] = input()
-    client_secrets["installed"]["redirect_uris"] = ["http://localhost"]
-    SECRETS = client_secrets
-    JSONSave("client_secrets",data=client_secrets)
+    print("Нет секретов клиента. Спросите разраба :)")
+    input()
+    quit()
 GOOGLE_SHEETS_KEY = SECRETS["GOOGLE_SHEETS_KEY"]
 BREAK_SHEETS_KEY = SECRETS["BREAK_SHEETS_KEY"]
 
@@ -397,7 +392,7 @@ def OperationUI():
     global DATA
     OPNAME = NameEntry.get()
     DATA["USER"] = [OPNAME]
-    JSONSave(DATA_FILENAMES[0],data=DATA)
+    JSONSave(filename=DATA_FILENAMES[0],cwd=CWD,data=DATA)
     TimerDataFlag.set() # signal for timer update
     PageCleanUI()
     PageOperationRBUI()
