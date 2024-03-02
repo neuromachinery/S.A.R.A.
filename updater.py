@@ -64,4 +64,4 @@ def main(key,filename="DATA"):
         json.dump(DATA,f,ensure_ascii=False)
     return DATA
 if __name__ == "__main__":
-    main("KEY_HERE") # for testing purposes
+    print(main("KEY_HERE")) # for testing purposes

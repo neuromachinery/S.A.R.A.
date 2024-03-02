@@ -22,7 +22,6 @@ DATA_FIELDS = [
     "доход за час",
     "доход за смену",
     "доход за месяц",
-    "гарант. доход",
     "акция"
 ]
 QUESTIONS = [
@@ -189,11 +188,12 @@ def InfoGet():
         return
     else:
         #if("#N/A" in info):info[info.index("#N/A")]="Нет"
-        if(len(info[-1])<len(ENCODE_DICTIONARY["PROMO"])):
-            key = "0" if list(info[-1].keys())[0]=="1" else "1"
-            info[-1][key] = "Нет"
+        #if(len(info[-1])<len(ENCODE_DICTIONARY["PROMO"])):
+        #    key = "0" if list(info[-1].keys())[0]=="1" else "1"
+        #    info[-1][key] = "Нет"
         displayInfo = info.copy()
-        displayInfo.append(displayInfo[4]["1"])
+        #displayInfo.append(displayInfo[4]["1"])
+        #displayInfo.append(0)
         displayInfo[4] = displayInfo[4]["0"]
         displayInfo[0] = list(ENCODE_DICTIONARY["TYPE"].keys())[int(displayInfo[0])]
     
